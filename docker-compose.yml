@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: .
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - redis
+    networks:
+      - app-network
+
+  backend:
+    build: ./ai-intrusion-detection/backend
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis
+      - API_KEY=${API_KEY:-your-secure-api-key}
+      - SECRET_KEY=${SECRET_KEY:-your-jwt-secret-key}
+    depends_on:
+      - redis
+    networks:
+      - app-network
+    volumes:
+      - ./ai-intrusion-detection/backend:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  redis_data:
